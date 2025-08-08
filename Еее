@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>PCB Animation with Video Capture</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5.capture@1.6.0/dist/p5.capture.umd.min.js"></script>
+  </head>
+  <body>
+    <script>
+      let pulses = [];
+      let capturer;
+
+      function setup() {
+        createCanvas(1000, 700);
+        frameRate(60);
+        angleMode(DEGREES);
+        generatePulses();
+        noFill();
+      }
+
+      function draw() {
+        background(20);
+        drawGrid();
+        drawTraces();
+        drawCentralChip();
+        drawComponents();
+        drawLabels();
+        animatePulses();
+
+        // 🎥 Если запись активна — захватываем кадр
+        if (capturer && capturer.isCapturing) {
+          capturer.capture(canvas);
+        }
+      }
+
+      // 🟦 Сетка платы
+      function drawGrid() {
+        stroke(40);
+        strokeWeight(1);
+        for (let x = 0; x < width; x += 25) {
+          line(x, 0, x, height);
+        }
+        for (let y = 0; y < height; y += 25) {
+          line(0, y, width, y);
+        }
+      }
+
+      // 🔷 Трассы с градиентом и свечением
+      function drawTraces() {
+        drawEnhancedTrace(150, 150, 700, 0);
+        drawEnhancedTrace(850, 150, 0, 400);
+        drawEnhancedTrace(150, 550, 700, 0);
+        drawEnhancedTrace(150, 150, 0, 400);
+      }
+
+      function drawEnhancedTrace(x, y, dx, dy) {
+        let ctx = drawingContext;
+        ctx.save();
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'cyan';
+
+        let gradient = ctx.createLinearGradient(x, y, x + dx, y + dy);
+        gradient.addColorStop(0, 'rgba(0,255,255,0.9)');
+        gradient.addColorStop(1, 'rgba(0,100,255,0.3)');
+        ctx.strokeStyle = gradient;
+
+        strokeWeight(4);
+        beginShape();
+        vertex(x, y);
+        vertex(x + dx, y + dy);
+        endShape();
+        ctx.restore();
+      }
+
+      // 🟩 Центральная микросхема
+      function drawCentralChip() {
+        fill(0, 200, 255, 80);
+        stroke(0, 255, 255);
+        strokeWeight(2);
+        rect(400, 250, 200, 200, 10);
+
+        for (let i = 0; i < 10; i++) {
+          let px = 400 + i * 20;
+          line(px, 250, px, 230);
+          line(px, 450, px, 470);
+          drawVia(px, 230);
+          drawVia(px, 470);
+        }
+      }
+
+      // 🟢 Контактные площадки
+      function drawVia(x, y) {
+        fill(0, 255, 0);
+        noStroke();
+        ellipse(x, y, 8, 8);
+        stroke(0, 255, 0);
+        strokeWeight(1);
+        ellipse(x, y, 12, 12);
+      }
+
+      // 🧩 Компоненты: резисторы, конденсаторы, диоды
+      function drawComponents() {
+        stroke(0, 255, 255);
+        fill(0, 255, 255, 50);
+        rect(200, 600, 80, 40, 5); // конденсатор
+        rect(800, 100, 60, 30, 5); // резистор
+        triangle(300, 200, 320, 190, 320, 210); // диод
+
+        drawVia(240, 580);
+        drawVia(830, 80);
+        drawVia(310, 200);
+      }
+
+      // 🔤 Маркировка компонентов
+      function drawLabels() {
+        fill(0, 255, 255);
+        noStroke();
+        textSize(14);
+        text("C1", 205, 595);
+        text("R1", 805, 95);
+        text("D1", 295, 195);
+        text("U1", 460, 240);
+      }
+
+      // 🔴 Анимация бегущих сигналов
+      function generatePulses() {
+        for (let i = 0; i < 30; i++) {
+          pulses.push({
+            x: random(150, 850),
+            y: random([150, 550]),
+            dx: random(1, 3),
+            size: random(6, 12)
+          });
+        }
+      }
+
+      function animatePulses() {
+        noStroke();
+        for (let p of pulses) {
+          fill(255, 0, 0, 180);
+          ellipse(p.x, p.y, p.size);
+          p.x += p.dx;
+          if (p.x > 850) p.x = 150;
+        }
+      }
+
+      // 🎬 Управление записью по клавише 'r'
+      function keyPressed() {
+        if (key === 'r') {
+          if (!capturer) {
+            capturer = new p5Capture({ format: 'webm' });
+            capturer.start();
+            console.log("🔴 Запись началась");
+          } else {
+            capturer.stop();
+            capturer.save();
+            capturer = null;
+            console.log("✅ Запись завершена и сохранена");
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
